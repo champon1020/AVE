@@ -1,6 +1,6 @@
-"""Model Declaration Module
+"""Models Declaration Module
 
-This module provides module class.
+This module provides model classes.
 
 """
 
@@ -42,24 +42,25 @@ class AttentionNet(nn.Module):
             torch.Tensor: video feature attended audio.
 
         """
-        # Reshape video feature: [batch, video_dim, video_heigth, video_width]
-        #   -> [batch, video_size, video_dim]
+        # Reshape video feature:
+        #   [batch, video_dim, video_heigth, video_width] -> [batch, video_size, video_dim]
         # where video_size = video_heigth * video_width
         video = video.view(video.shape(0), -1, video.shape(1))
 
-        # Transform audio: [batch, audio_dim] -> [batch, embed_dim]
+        # Transform audio:
+        #   [batch, audio_dim] -> [batch, embed_dim]
         a_t = F.relu(self.affine_audio(audio))
 
-        # Transform video: [batch, video_size, video_dim]
-        #   -> [batch, video_size, embed_dim]
+        # Transform video:
+        #   [batch, video_size, video_dim] -> [batch, video_size, embed_dim]
         v_t = F.relu(self.affine_video(video))
 
-        # Add two features: [batch, embed_dim] + [batch, video_size, embed_dim]
-        #   -> [batch, video_size, video_size]
+        # Add two features:
+        #   [batch, embed_dim] + [batch, video_size, embed_dim] -> [batch, video_size, video_size]
         f_t = self.affine_a(a_t).unsqueeze(2) + self.affine_v(v_t)
 
-        # Add audio and visual features: [batch, video_size, video_size]
-        #   -> [batch, video_size]
+        # Add audio and visual features:
+        #   [batch, video_size, video_size] -> [batch, video_size]
         x_t = self.affine_f(F.tanh(f_t)).squeeze(2)
 
         # Softmax to get attention weight: [batch, 1, video_size]
