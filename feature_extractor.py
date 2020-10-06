@@ -12,9 +12,10 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+from torch import Tensor
 
 
-def extract_features(video_path):
+def extract_features(video_path: str) -> (Tensor, Tensor):
     """Extract video and audio features
 
     Args:
@@ -53,7 +54,7 @@ def extract_features(video_path):
     return feature_a, feature_v
 
 
-def _extract_video_feature(frame):
+def _extract_video_feature(frame: Tensor) -> Tensor:
     """Extract video feature
 
     Args:
@@ -82,7 +83,7 @@ def _extract_video_feature(frame):
     return embedding
 
 
-def _extract_audio_feature(wave_path):
+def _extract_audio_feature(wave_path: str) -> Tensor:
     """Extract audio feature
 
     Args:
@@ -100,7 +101,7 @@ def _extract_audio_feature(wave_path):
     return embedding
 
 
-def _mp4_to_wav(video_path):
+def _mp4_to_wav(video_path: str) -> str:
     """Extract audio file with wav format from mp4 video file
 
     Args:
