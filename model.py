@@ -7,6 +7,7 @@ This module provides model class.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 
 class DMRFE(nn.Module):
@@ -15,26 +16,26 @@ class DMRFE(nn.Module):
     This class provides Dual Multimodal Residual Fusion Ensemble Model.
 
     Attributes:
-        audio_dim: audio feature dimension.
-        video_dim: video feature dimension.
-        video_size: video_height * video_width.
-        att_embed_dim: embedding dimension of attention network.
-        lstm_hidden_dim: hidden layer dimension of lstm.
-        lstm_num_layers: the number of lstm block layers.
-        target_size:
+        audio_dim (int): audio feature dimension.
+        video_dim (int): video feature dimension.
+        video_size (int): video_height * video_width.
+        att_embed_dim (int): embedding dimension of attention network.
+        lstm_hidden_dim (int): hidden layer dimension of lstm.
+        lstm_num_layers (int): the number of lstm block layers.
+        target_size (int):
             the number of targets size. In localization task, this is the number of categories.
 
     """
 
     def __init__(
         self,
-        audio_dim,
-        video_dim,
-        video_size,
-        att_embed_dim,
-        lstm_hidden_dim,
-        lstm_num_layers,
-        target_size,
+        audio_dim: int,
+        video_dim: int,
+        video_size: int,
+        att_embed_dim: int,
+        lstm_hidden_dim: int,
+        lstm_num_layers: int,
+        target_size: int,
     ):
         super().__init__()
         self.attention_net = AttentionNet(
@@ -63,13 +64,11 @@ class DMRFE(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        """Initialize the weights
-
-        """
+        """Initialize the weights"""
         nn.init.xavier_uniform(self.fc.weight)
 
-    def forward(self, audio, video):
-        """ Forward process
+    def forward(self, audio: Tensor, video: Tensor) -> Tensor:
+        """Forward process
 
         Args:
             audio (torch.Tensor): audio feature, [batch, audio_dim].
@@ -100,15 +99,15 @@ class AttentionNet(nn.Module):
     This class provides attention network.
 
     Attributes:
-        affine_audio: Dense layer that projects audio feature to embedding space.
-        affine_video: Dense layer that projects video feature to embedding space.
-        affine_a: Weight parameter.
-        affine_v: Weight parameter.
-        affine_f: Weight parameter.
+        affine_audio (int): Dense layer that projects audio feature to embedding space.
+        affine_video (int): Dense layer that projects video feature to embedding space.
+        affine_a (int): Weight parameter.
+        affine_v (int): Weight parameter.
+        affine_f (int): Weight parameter.
 
     """
 
-    def __init__(self, audio_dim, video_dim, video_size, embed_dim):
+    def __init__(self, audio_dim: int, video_dim: int, video_size: int, embed_dim: int):
         super().__init__()
         self.affine_audio = nn.Linear(audio_dim, embed_dim)
         self.affine_video = nn.Linear(video_dim, embed_dim)
@@ -116,7 +115,7 @@ class AttentionNet(nn.Module):
         self.affine_v = nn.Linear(embed_dim, video_size, bias=False)
         self.affine_f = nn.Linear(video_size, 1, bias=False)
 
-    def forward(self, audio, video):
+    def forward(self, audio: Tensor, video: Tensor) -> Tensor:
         """Forward process
 
         Args:
@@ -163,13 +162,13 @@ class FusionNet(nn.Module):
     This class provides fusion network (DMRN).
 
     Attributes:
-        input_size: Dense layer input size.
-        hidden_size: Dense layer hidden size.
-        output_size: Dense layer output size.
+        input_size (int): Dense layer input size.
+        hidden_size (int): Dense layer hidden size.
+        output_size (int): Dense layer output size.
 
     """
 
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size: int, hidden_size: int, output_size: int):
         super().__init__()
         self.dense_audio = nn.Sequential(
             nn.Linear(input_size, hidden_size),
@@ -182,7 +181,7 @@ class FusionNet(nn.Module):
             nn.Linear(hidden_size, output_size),
         )
 
-    def forward(self, h_audio, h_video):
+    def forward(self, h_audio: Tensor, h_video: Tensor) -> Tensor:
         """Forward process
 
         Args:
