@@ -4,9 +4,11 @@ This module provides AVE dataset loader class.
 
 """
 import os
+from typing import Dict
 
 import torch
 import torch.utils.data as data
+from torch import Tensor
 
 
 class AVEDataset(data.Dataset):
@@ -19,16 +21,16 @@ class AVEDataset(data.Dataset):
 
     """
 
-    def __init__(self, ave_root, annot_path, batch_size):
+    def __init__(self, ave_root: int, annot_path: int, batch_size: int):
         self.ave_root = ave_root
         self.annot_path = annot_path
         self.batch_size = batch_size
         self.annotations = []
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.annotations)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: str) -> Dict[str, Tensor]:
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
@@ -63,13 +65,13 @@ class Annotation:
 
     """
 
-    def __init__(self, category, video_id, start_time, end_time):
+    def __init__(self, category: str, video_id: str, start_time: int, end_time: int):
         self.cateogry = category
         self.video_id = video_id
         self.start_time = start_time
         self.end_time = end_time
 
-    def equal(self, video_id):
+    def equal(self, video_id: str) -> bool:
         """Is Equal
 
         Return the bool variable whether this annotation has the video_id of first argument.
