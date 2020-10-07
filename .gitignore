@@ -1,0 +1,4 @@
+__pycache__/**
+features/**
+tmp/**
+playground.py
