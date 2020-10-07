@@ -18,6 +18,7 @@ class AVEDataset(data.Dataset):
         ave_root (str): ave dataset root directory path.
         annot_path (str): annotation file path.
         batch_size (int): dataset batch size.
+        annotations (Annotation[]): all annotations list.
 
     """
 
@@ -25,7 +26,9 @@ class AVEDataset(data.Dataset):
         self.ave_root = ave_root
         self.annot_path = annot_path
         self.batch_size = batch_size
+
         self.annotations = []
+        self._load_annot()
 
     def __len__(self) -> int:
         return len(self.annotations)
