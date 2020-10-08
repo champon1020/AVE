@@ -90,7 +90,7 @@ def main():
 
         for i, video_name in enumerate(video_files):
             video_path = os.path.join(args.ave_root, video_name)
-            video_id = os.path.splitext(video_name)
+            video_id = os.path.splitext(video_name)[0]
 
             audio_output_name = "features/audio/{0}.pt".format(video_id)
             frame_output_name = "features/frame/{0}.pt".format(video_id)
@@ -102,6 +102,7 @@ def main():
             feature_a, feature_v = feature_extractor.extract(video_path)
             torch.save(feature_a, audio_output_name)
             torch.save(feature_v, frame_output_name)
+            print("Save {0}".format(video_id))
             print("Status: {0} / {1}".format(i + 1, len(video_files)))
 
     ds = AVEDataset(args.ave_root, args.annot_path, train_config["batch-size"])

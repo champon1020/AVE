@@ -33,11 +33,12 @@ class AVEDataset(data.Dataset):
     def __len__(self) -> int:
         return len(self.annotations)
 
-    def __getitem__(self, idx: str) -> Dict[str, Tensor]:
+    def __getitem__(self, idx: int) -> Dict[str, Tensor]:
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        embed_name = "{0}.pt".format(idx)
+        video_id = self.annotations[idx].video_id
+        embed_name = "{0}.pt".format(video_id)
         feature_a = torch.load(os.path.join("features/audio", embed_name))
         feature_v = torch.load(os.path.join("features/frame", embed_name))
 

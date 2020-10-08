@@ -22,5 +22,5 @@ def train(ds: AVEDataset, model: DMRFE, batch_size: int, epoch: int):
     loader = data.DataLoader(ds, batch_size, shuffle=True)
     for _ in range(epoch):
         for batch in loader:
-            print(batch)
+            print(batch["audio"].shape, batch["video"].shape)
             sys.exit(1)

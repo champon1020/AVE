@@ -94,6 +94,8 @@ class FeatureExtractor:
             # (512, 7, 7, 10) to (10, 512, 7, 7)
             embedding = embedding.permute(3, 0, 1, 2)
 
+        torch.cuda.empty_cache()
+
         return embedding
 
     def _extract_audio_feature(self, wave_path: str) -> Tensor:
