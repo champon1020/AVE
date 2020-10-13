@@ -1,3 +1,7 @@
 train:
-  batch-size: 10
+  batch_size: 10
   epoch: 1
+  att_embed_dim: 49
+  lstm_hidden_dim: 128
+  lstm_num_layers: 1
+  target_size: 29

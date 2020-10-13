@@ -40,6 +40,13 @@ def parse_args() -> argparse.ArgumentParser:
         "--annot-path", help="annotation file path", type=str, required=True
     )
     parser.add_argument(
+        "--features-path",
+        default="./features",
+        help="features directory path",
+        type=str,
+        required=False,
+    )
+    parser.add_argument(
         "--extract-features", help="flag, extract features or not", action="store_true"
     )
 
@@ -69,56 +76,61 @@ def main():
     # If audio and visual features has not been extracted,
     # extract them from video file, and save them.
     if args.extract_features is True:
-        # Check if the audio features directory is exist.
-        if os.path.exists("features/audio") is False:
-            os.makedirs("features/audio")
-            logger.info("make directory features/audio")
+        _extract_feature_main(args)
 
-        # Check if the frame features directory is exist.
-        if os.path.exists("features/frame") is False:
-            os.makedirs("features/frame")
-            logger.info("make directory features/frame")
-
-        # Check if the .wav files directory is exist.
-        if os.path.exists("waves") is False:
-            os.makedirs("waves")
-            logger.info("make directory waves")
-
-        logger.info("Extracting features...")
-        video_files = os.listdir(args.ave_root)
-        feature_extractor = FeatureExtractor()
-
-        for i, video_name in enumerate(video_files):
-            video_path = os.path.join(args.ave_root, video_name)
-            video_id = os.path.splitext(video_name)[0]
-
-            audio_output_name = "features/audio/{0}.pt".format(video_id)
-            frame_output_name = "features/frame/{0}.pt".format(video_id)
-
-            if os.path.exists(audio_output_name) and os.path.exists(frame_output_name):
-                print("Skip extract {0}.mp4".format(video_id))
-                continue
-
-            feature_a, feature_v = feature_extractor.extract(video_path)
-            torch.save(feature_a, audio_output_name)
-            torch.save(feature_v, frame_output_name)
-            print("Save {0}".format(video_id))
-            print("Status: {0} / {1}".format(i + 1, len(video_files)))
-
-    ds = AVEDataset(args.ave_root, args.annot_path, train_config["batch-size"])
-    """
+    ds = AVEDataset(
+        args.ave_root, args.annot_path, args.features_path, train_config["batch_size"]
+    )
     model = DMRFE(
         128,
         512,
         7 * 7,
-        config.att_embed_dim,
-        config.lstm_hidden_dim,
-        config.lstm_num_layers,
-        config.target_size,
-    )"""
-    model = None
+        train_config["att_embed_dim"],
+        train_config["lstm_hidden_dim"],
+        train_config["lstm_num_layers"],
+        train_config["target_size"],
+    )
 
-    train(ds, model, train_config["batch-size"], train_config["epoch"])
+    train(ds, model, train_config["batch_size"], train_config["epoch"])
+
+
+def _extract_feature_main(args):
+    """Main routine of extracting features"""
+    # Check if the audio features directory is exist.
+    if os.path.exists("features/audio") is False:
+        os.makedirs("features/audio")
+        logger.info("make directory features/audio")
+
+    # Check if the frame features directory is exist.
+    if os.path.exists("features/frame") is False:
+        os.makedirs("features/frame")
+        logger.info("make directory features/frame")
+
+    # Check if the .wav files directory is exist.
+    if os.path.exists("waves") is False:
+        os.makedirs("waves")
+        logger.info("make directory waves")
+
+    logger.info("Extracting features...")
+    video_files = os.listdir(args.ave_root)
+    feature_extractor = FeatureExtractor()
+
+    for i, video_name in enumerate(video_files):
+        video_path = os.path.join(args.ave_root, video_name)
+        video_id = os.path.splitext(video_name)[0]
+
+        audio_output_name = "features/audio/{0}.pt".format(video_id)
+        frame_output_name = "features/frame/{0}.pt".format(video_id)
+
+        if os.path.exists(audio_output_name) and os.path.exists(frame_output_name):
+            print("Skip extract {0}.mp4".format(video_id))
+            continue
+
+        feature_a, feature_v = feature_extractor.extract(video_path)
+        torch.save(feature_a, audio_output_name)
+        torch.save(feature_v, frame_output_name)
+        print("Save {0}".format(video_id))
+        print("Status: {0} / {1}".format(i + 1, len(video_files)))
 
 
 if __name__ == "__main__":

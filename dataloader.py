@@ -18,13 +18,16 @@ class AVEDataset(data.Dataset):
         ave_root (str): ave dataset root directory path.
         annot_path (str): annotation file path.
         batch_size (int): dataset batch size.
-        annotations (Annotation[]): all annotations list.
+        annotations (Dict[]): all annotations list.
 
     """
 
-    def __init__(self, ave_root: int, annot_path: int, batch_size: int):
+    def __init__(
+        self, ave_root: str, annot_path: str, features_path: str, batch_size: int
+    ):
         self.ave_root = ave_root
         self.annot_path = annot_path
+        self.features_path = features_path
         self.batch_size = batch_size
 
         self.annotations = []
@@ -37,12 +40,16 @@ class AVEDataset(data.Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        video_id = self.annotations[idx].video_id
+        video_id = self.annotations[idx]["video_id"]
         embed_name = "{0}.pt".format(video_id)
-        feature_a = torch.load(os.path.join("features/audio", embed_name))
-        feature_v = torch.load(os.path.join("features/frame", embed_name))
+        feature_a = torch.load(os.path.join(self.features_path, "audio", embed_name))
+        feature_v = torch.load(os.path.join(self.features_path, "frame", embed_name))
 
-        sample = {"audio": feature_a, "video": feature_v}
+        sample = {
+            "audio": feature_a,
+            "video": feature_v,
+            "label": self.annotations[idx],
+        }
         return sample
 
     def _load_annot(self):
@@ -54,37 +61,10 @@ class AVEDataset(data.Dataset):
             for line in f:
                 annots = line.split("&")
                 self.annotations.append(
-                    Annotation(annots[0], annots[1], annots[3], annots[4])
+                    {
+                        "category": annots[0],
+                        "video_id": annots[1],
+                        "start_time": annots[2],
+                        "end_time": annots[3],
+                    }
                 )
-
-
-class Annotation:
-    """AVE annotation class
-
-    Attributes:
-        category (str): category annotation.
-        video_id (str): unique id.
-        start_time (int): event start time.
-        end_time (int): event end time.
-
-    """
-
-    def __init__(self, category: str, video_id: str, start_time: int, end_time: int):
-        self.cateogry = category
-        self.video_id = video_id
-        self.start_time = start_time
-        self.end_time = end_time
-
-    def equal(self, video_id: str) -> bool:
-        """Is Equal
-
-        Return the bool variable whether this annotation has the video_id of first argument.
-
-        Args:
-            video_id (int): unique id for all data.
-
-        Returns:
-            bool: whether this annotation has the video_id or not.
-
-        """
-        return self.video_id == video_id
