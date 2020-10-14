@@ -38,6 +38,9 @@ class DMRFE(nn.Module):
         target_size: int,
     ):
         super().__init__()
+        self.lstm_num_layers = lstm_num_layers
+        self.lstm_hidden_dim = lstm_hidden_dim
+    
         self.attention_net = AttentionNet(
             audio_dim, video_dim, video_size, att_embed_dim
         )
@@ -63,33 +66,39 @@ class DMRFE(nn.Module):
 
         self._init_weights()
 
+        if torch.cuda.is_available():
+            self.cuda()
+
     def _init_weights(self):
         """Initialize the weights"""
-        nn.init.xavier_uniform(self.fc.weight)
+        nn.init.xavier_uniform_(self.fc.weight)
 
     def forward(self, audio: Tensor, video: Tensor) -> Tensor:
         """Forward process
 
         Args:
-            audio (torch.Tensor): audio feature, [batch, audio_dim].
-            video (torch.Tensor): video feature, [batch, video_dim, video_height, video_width].
+            audio (torch.Tensor): audio feature, [batch, frame_num, audio_dim].
+            video (torch.Tensor):
+                video feature, [batch, frame_num, video_dim, video_height, video_width].
 
         Returns:
-            (torch.Tensor): event localization probabilities, [batch, target_size].
+            (torch.Tensor): event localization probabilities, [batch, frame_num, target_size].
 
         """
-        # Get visual attention: [batch, video_dim].
+        # Get visual attention: [batch, frame_num, video_dim].
         v_att = self.attention_net(audio, video)
 
+        # Apply lstm layer.
         h_a, _ = self.lstm_audio(audio)
         h_v, _ = self.lstm_video(v_att)
 
-        # Joint audio and visual features: [batch, repl_size].
+        # Joint audio and visual features: [batch, frame_num, hidden_dim*2].
         h_t = self.fusion_net(h_a, h_v)
 
         # Event localization with softmax.
         h_t = self.fc(h_t)
         out = F.softmax(h_t, dim=-1)
+
         return out
 
 
@@ -113,45 +122,55 @@ class AttentionNet(nn.Module):
         self.affine_video = nn.Linear(video_dim, embed_dim)
         self.affine_a = nn.Linear(embed_dim, video_size, bias=False)
         self.affine_v = nn.Linear(embed_dim, video_size, bias=False)
-        self.affine_f = nn.Linear(video_size, 1, bias=False)
+        self.affine_f = nn.Linear(embed_dim, 1, bias=False)
+
 
     def forward(self, audio: Tensor, video: Tensor) -> Tensor:
         """Forward process
 
         Args:
-            audio (torch.Tensor): audio feature, [batch, audio_dim].
-            video (torch.Tensor): video feature, [batch, video_dim, video_height, video_width].
+            audio (torch.Tensor): audio feature, [batch, frame_num, audio_dim].
+            video (torch.Tensor):
+                video feature, [batch, frame_num, video_dim, video_height, video_width].
 
         Returns:
             torch.Tensor: video feature attended audio, [batch, video_dim]
 
         """
         # Reshape video feature:
-        #   [batch, video_dim, video_heigth, video_width] -> [batch, video_size, video_dim]
+        #   [batch, frame_num, video_dim, video_heigth, video_width]
+        #   -> [batch, frame_num, video_size, video_dim]
         # where video_size = video_heigth * video_width
-        video = video.view(video.shape(0), -1, video.shape(1))
+        video = video.view(video.shape[0], video.shape[1], -1, video.shape[2])
 
         # Transform audio:
-        #   [batch, audio_dim] -> [batch, embed_dim]
+        #   [batch, frame_num, audio_dim] -> [batch, frame_num, embed_dim]
         a_t = F.relu(self.affine_audio(audio))
 
         # Transform video:
-        #   [batch, video_size, video_dim] -> [batch, video_size, embed_dim]
+        #   [batch, frame_num, video_size, video_dim] -> [batch, frame_num, video_size, embed_dim]
         v_t = F.relu(self.affine_video(video))
 
         # Add two features:
-        #   [batch, embed_dim] + [batch, video_size, embed_dim] -> [batch, video_size, video_size]
+        #   [batch, frame_num, embed_dim] + [batch, frame_num, video_size, embed_dim]
+        #   -> [batch, frame_num, video_size, embed_dim]
         f_t = self.affine_a(a_t).unsqueeze(2) + self.affine_v(v_t)
 
         # Add audio and visual features:
-        #   [batch, video_size, video_size] -> [batch, video_size]
-        x_t = self.affine_f(F.tanh(f_t)).squeeze(2)
+        #   [batch, frame_num, video_size, embed_dim] -> [batch*frame_num, 1, video_size]
+        x_t = self.affine_f(torch.tanh(f_t)).view(-1, 1, f_t.shape[2])
 
-        # Softmax to get attention weight: [batch, 1, video_size]
-        w_t = F.softmax(x_t).view(video.shape(0), -1, video.shape(1))
+        # Softmax to get attention weight: [batch*frame_num, 1, video_size]
+        w_t = F.softmax(x_t, dim=2)
 
-        # Attention map: [batch, video_dim]
-        v_att = torch.bmm(w_t, video).squeeze(1)
+        # Attention map: [batch*frame_num, 1, video_dim]
+        v_att = torch.bmm(
+            w_t,
+            video.view(video.shape[0] * video.shape[1], video.shape[2], video.shape[3]),
+        )
+
+        # Convert shape to [batch, frame_num, video_dim]
+        v_att = v_att.view(video.shape[0], video.shape[1], video.shape[3])
 
         return v_att
 
@@ -193,7 +212,7 @@ class FusionNet(nn.Module):
 
         """
         h_t = self.dense_audio(h_audio) + self.dense_video(h_video)
-        h_a = F.tanh(h_audio + h_t)
-        h_v = F.tanh(h_video + h_t)
+        h_a = torch.tanh(h_audio + h_t)
+        h_v = torch.tanh(h_video + h_t)
         out = torch.mul(h_a + h_v, 0.5)
         return out

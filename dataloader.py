@@ -4,8 +4,9 @@ This module provides AVE dataset loader class.
 
 """
 import os
-from typing import Dict
+from typing import Dict, List
 
+import numpy as np
 import torch
 import torch.utils.data as data
 from torch import Tensor
@@ -18,27 +19,48 @@ class AVEDataset(data.Dataset):
         ave_root (str): ave dataset root directory path.
         annot_path (str): annotation file path.
         batch_size (int): dataset batch size.
+        annotations (Dict[]): all annotations list.
+        frame_num (int): the number of frames.
+        target_size (int): the number of categories included in AVE dataset.
 
     """
 
-    def __init__(self, ave_root: int, annot_path: int, batch_size: int):
+    def __init__(
+        self,
+        ave_root: str,
+        annot_path: str,
+        features_path: str,
+        batch_size: int,
+        target_size: int,
+    ):
         self.ave_root = ave_root
         self.annot_path = annot_path
+        self.features_path = features_path
         self.batch_size = batch_size
+        self.frame_num = 10
+        self.target_size = target_size
+
         self.annotations = []
+        self.category_dict = {"None": target_size - 1}
+        self._load_annot()
 
     def __len__(self) -> int:
         return len(self.annotations)
 
-    def __getitem__(self, idx: str) -> Dict[str, Tensor]:
+    def __getitem__(self, idx: int) -> Dict[str, Tensor]:
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        embed_name = "{0}.pt".format(idx)
-        feature_a = torch.load(os.path.join("features/audio", embed_name))
-        feature_v = torch.load(os.path.join("features/frame", embed_name))
+        video_id = self.annotations[idx]["video_id"]
+        embed_name = "{0}.pt".format(video_id)
+        feature_a = torch.load(os.path.join(self.features_path, "audio", embed_name))
+        feature_v = torch.load(os.path.join(self.features_path, "frame", embed_name))
 
-        sample = {"audio": feature_a, "video": feature_v}
+        sample = {
+            "audio": feature_a,
+            "video": feature_v,
+            "label": self.annotations[idx],
+        }
         return sample
 
     def _load_annot(self):
@@ -47,40 +69,44 @@ class AVEDataset(data.Dataset):
 
         """
         with open(self.annot_path) as f:
-            for line in f:
+            category_num = 0
+            iterlines = iter(f)
+            next(iterlines)
+
+            for line in iterlines:
+                # Annotations format is bellow.
+                # <category>&<video_id>&<video_quality>&<event_start_time>&<event_end_time>
                 annots = line.split("&")
-                self.annotations.append(
-                    Annotation(annots[0], annots[1], annots[3], annots[4])
+
+                # If category name is not exist in category_dict, add category as key
+                # and iterate the category number.
+                if self.category_dict.get(annots[0]) is None:
+                    self.category_dict[annots[0]] = category_num
+                    category_num += 1
+
+                label = self._generate_segment_label(
+                    annots[0], int(annots[3]), int(annots[4].split("\n")[0])
                 )
 
+                self.annotations.append(
+                    {"category": annots[0], "video_id": annots[1], "label": label}
+                )
 
-class Annotation:
-    """AVE annotation class
-
-    Attributes:
-        category (str): category annotation.
-        video_id (str): unique id.
-        start_time (int): event start time.
-        end_time (int): event end time.
-
-    """
-
-    def __init__(self, category: str, video_id: str, start_time: int, end_time: int):
-        self.cateogry = category
-        self.video_id = video_id
-        self.start_time = start_time
-        self.end_time = end_time
-
-    def equal(self, video_id: str) -> bool:
-        """Is Equal
-
-        Return the bool variable whether this annotation has the video_id of first argument.
+    def _generate_segment_label(
+        self, category: str, start_time: int, end_time: int
+    ) -> List[int]:
+        """Generate time segment label
 
         Args:
-            video_id (int): unique id for all data.
-
-        Returns:
-            bool: whether this annotation has the video_id or not.
+            start_time (List[int]): event start times.
+            end_time (List[int]): event end times.
 
         """
-        return self.video_id == video_id
+        segment = [
+            self.category_dict[category]
+            if start_time <= t or t < end_time
+            else self.category_dict["None"]
+            for t in range(self.frame_num)
+        ]
+
+        return torch.from_numpy(np.array(segment))
