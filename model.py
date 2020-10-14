@@ -71,7 +71,7 @@ class DMRFE(nn.Module):
 
     def _init_weights(self):
         """Initialize the weights"""
-        nn.init.xavier_uniform(self.fc.weight)
+        nn.init.xavier_uniform_(self.fc.weight)
 
     def forward(self, audio: Tensor, video: Tensor) -> Tensor:
         """Forward process
@@ -82,17 +82,17 @@ class DMRFE(nn.Module):
                 video feature, [batch, frame_num, video_dim, video_height, video_width].
 
         Returns:
-            (torch.Tensor): event localization probabilities, [batch, target_size].
+            (torch.Tensor): event localization probabilities, [batch, frame_num, target_size].
 
         """
-        # Get visual attention: [batch, video_dim].
+        # Get visual attention: [batch, frame_num, video_dim].
         v_att = self.attention_net(audio, video)
 
         # Apply lstm layer.
         h_a, _ = self.lstm_audio(audio)
         h_v, _ = self.lstm_video(v_att)
 
-        # Joint audio and visual features: [batch, repl_size].
+        # Joint audio and visual features: [batch, frame_num, hidden_dim*2].
         h_t = self.fusion_net(h_a, h_v)
 
         # Event localization with softmax.
