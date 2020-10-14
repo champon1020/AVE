@@ -1,9 +1,9 @@
 train:
-  batch_size: 128
-  epoch: 300
+  batch_size: 64
+  epoch: 400
   att_embed_dim: 49
   lstm_hidden_dim: 128
   lstm_num_layers: 1
   target_size: 29
-  learning_rate: 0.001
-  valid_span: 5
+  learning_rate: 0.00001
+  valid_span: 2

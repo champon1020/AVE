@@ -37,7 +37,16 @@ def parse_args() -> argparse.ArgumentParser:
         "--ave-root", help="AVE dataset root path", type=str, required=True
     )
     parser.add_argument(
-        "--annot-path", help="annotation file path", type=str, required=True
+        "--train-annot",
+        help="annotation file path for training",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--valid-annot",
+        help="annotation file path for validation",
+        type=str,
+        required=True,
     )
     parser.add_argument(
         "--features-path",
@@ -81,7 +90,7 @@ def main():
     # AVE training dataset.
     train_ds = AVEDataset(
         args.ave_root,
-        args.annot_path,
+        args.train_annot,
         args.features_path,
         train_config["batch_size"],
         train_config["target_size"],
@@ -90,7 +99,7 @@ def main():
     # AVE validation dataset.
     valid_ds = AVEDataset(
         args.ave_root,
-        args.annot_path,
+        args.valid_annot,
         args.features_path,
         train_config["batch_size"],
         train_config["target_size"],

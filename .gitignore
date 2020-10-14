@@ -3,3 +3,4 @@ features/**
 tmp/**
 playground.py
 run.sh
+log
