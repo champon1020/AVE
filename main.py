@@ -14,7 +14,7 @@ import yaml
 from dataloader import AVEDataset
 from feature_extractor import FeatureExtractor
 from model import DMRFE
-from train import train
+from train import Training
 
 logging.basicConfig(format="[AVE '%(levelname)s] %(message)s : %(asctime)s")
 logger = logging.getLogger()
@@ -76,11 +76,26 @@ def main():
     # If audio and visual features has not been extracted,
     # extract them from video file, and save them.
     if args.extract_features is True:
-        _extract_feature_main(args)
+        extract_feature_main(args)
 
-    ds = AVEDataset(
-        args.ave_root, args.annot_path, args.features_path, train_config["batch_size"]
+    # AVE training dataset.
+    train_ds = AVEDataset(
+        args.ave_root,
+        args.annot_path,
+        args.features_path,
+        train_config["batch_size"],
+        train_config["target_size"],
     )
+
+    # AVE validation dataset.
+    valid_ds = AVEDataset(
+        args.ave_root,
+        args.annot_path,
+        args.features_path,
+        train_config["batch_size"],
+        train_config["target_size"],
+    )
+
     model = DMRFE(
         128,
         512,
@@ -91,10 +106,20 @@ def main():
         train_config["target_size"],
     )
 
-    train(ds, model, train_config["batch_size"], train_config["epoch"])
+    training = Training(
+        model,
+        train_ds,
+        valid_ds,
+        train_config["batch_size"],
+        train_config["epoch"],
+        train_config["learning_rate"],
+        train_config["valid_span"],
+    )
+
+    training.train()
 
 
-def _extract_feature_main(args):
+def extract_feature_main(args):
     """Main routine of extracting features"""
     # Check if the audio features directory is exist.
     if os.path.exists("features/audio") is False:

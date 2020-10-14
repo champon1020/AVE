@@ -157,7 +157,7 @@ class AttentionNet(nn.Module):
 
         # Add audio and visual features:
         #   [batch, frame_num, video_size, embed_dim] -> [batch*frame_num, 1, video_size]
-        x_t = self.affine_f(F.tanh(f_t)).view(-1, 1, f_t.shape[2])
+        x_t = self.affine_f(torch.tanh(f_t)).view(-1, 1, f_t.shape[2])
 
         # Softmax to get attention weight: [batch*frame_num, 1, video_size]
         w_t = F.softmax(x_t, dim=2)
@@ -211,7 +211,7 @@ class FusionNet(nn.Module):
 
         """
         h_t = self.dense_audio(h_audio) + self.dense_video(h_video)
-        h_a = F.tanh(h_audio + h_t)
-        h_v = F.tanh(h_video + h_t)
+        h_a = torch.tanh(h_audio + h_t)
+        h_v = torch.tanh(h_video + h_t)
         out = torch.mul(h_a + h_v, 0.5)
         return out

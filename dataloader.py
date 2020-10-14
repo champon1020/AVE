@@ -6,6 +6,7 @@ This module provides AVE dataset loader class.
 import os
 from typing import Dict, List
 
+import numpy as np
 import torch
 import torch.utils.data as data
 from torch import Tensor
@@ -25,17 +26,22 @@ class AVEDataset(data.Dataset):
     """
 
     def __init__(
-        self, ave_root: str, annot_path: str, features_path: str, batch_size: int
+        self,
+        ave_root: str,
+        annot_path: str,
+        features_path: str,
+        batch_size: int,
+        target_size: int,
     ):
         self.ave_root = ave_root
         self.annot_path = annot_path
         self.features_path = features_path
         self.batch_size = batch_size
         self.frame_num = 10
-        self.target_size = 29
+        self.target_size = target_size
 
         self.annotations = []
-        self.category_dict = {"None": 28}
+        self.category_dict = {"None": target_size - 1}
         self._load_annot()
 
     def __len__(self) -> int:
@@ -96,14 +102,11 @@ class AVEDataset(data.Dataset):
             end_time (List[int]): event end times.
 
         """
-        segment = torch.zeros(self.frame_num, self.target_size)
+        segment = [
+            self.category_dict[category]
+            if start_time <= t or t < end_time
+            else self.category_dict["None"]
+            for t in range(self.frame_num)
+        ]
 
-        # Initialize all segment as category "None".
-        segment[:, -1] = 1
-
-        for i in range(start_time, end_time):
-            category_idx = self.category_dict[category]
-            segment[i, category_idx] = 1
-            segment[i, -1] = 0
-
-        return segment
+        return torch.from_numpy(np.array(segment))
