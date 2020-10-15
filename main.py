@@ -6,19 +6,73 @@ This module provides main process functions.
 import argparse
 import logging
 import os
-from typing import Dict
 
 import torch
-import yaml
 
-from dataloader import AVEDataset
+from dataset import AVEDataset
 from feature_extractor import FeatureExtractor
 from model import DMRFE
 from train import Training
+from util import parse_yaml
 
 logging.basicConfig(format="[AVE '%(levelname)s] %(message)s : %(asctime)s")
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+
+def main():
+    """Main process"""
+    args = parse_args()
+    config = parse_yaml(args.yaml_path)
+    train_config = config["train"]
+    model_config = config["model"]
+
+    # If audio and visual features has not been extracted,
+    # extract them from video file, and save them.
+    if args.extract_features is True:
+        extract_feature_main(args)
+
+    model = DMRFE(
+        128,
+        512,
+        7 * 7,
+        model_config["att_embed_dim"],
+        model_config["lstm_hidden_dim"],
+        model_config["lstm_num_layers"],
+        model_config["target_size"],
+    )
+
+    # AVE training dataset.
+    train_ds = AVEDataset(
+        args.ave_root,
+        args.train_annot,
+        args.features_path,
+        train_config["batch_size"],
+        model_config["target_size"],
+    )
+
+    # AVE validation dataset.
+    valid_ds = AVEDataset(
+        args.ave_root,
+        args.valid_annot,
+        args.features_path,
+        train_config["batch_size"],
+        model_config["target_size"],
+    )
+
+    training = Training(
+        model,
+        train_ds,
+        valid_ds,
+        train_config["batch_size"],
+        train_config["epoch"],
+        train_config["learning_rate"],
+        train_config["valid_span"],
+        train_config["save_span"],
+        train_config["save_dir"],
+    )
+
+    training.train()
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -61,71 +115,6 @@ def parse_args() -> argparse.ArgumentParser:
 
     args = parser.parse_args()
     return args
-
-
-def parse_yaml(yaml_path: str) -> Dict[str, str]:
-    """Parse yaml configuration file
-
-    Args:
-        yaml_path (str): yaml file path.
-
-    """
-    with open(yaml_path, "r") as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)
-
-    return data
-
-
-def main():
-    """Main process"""
-    args = parse_args()
-    config = parse_yaml(args.yaml_path)
-    train_config = config["train"]
-
-    # If audio and visual features has not been extracted,
-    # extract them from video file, and save them.
-    if args.extract_features is True:
-        extract_feature_main(args)
-
-    # AVE training dataset.
-    train_ds = AVEDataset(
-        args.ave_root,
-        args.train_annot,
-        args.features_path,
-        train_config["batch_size"],
-        train_config["target_size"],
-    )
-
-    # AVE validation dataset.
-    valid_ds = AVEDataset(
-        args.ave_root,
-        args.valid_annot,
-        args.features_path,
-        train_config["batch_size"],
-        train_config["target_size"],
-    )
-
-    model = DMRFE(
-        128,
-        512,
-        7 * 7,
-        train_config["att_embed_dim"],
-        train_config["lstm_hidden_dim"],
-        train_config["lstm_num_layers"],
-        train_config["target_size"],
-    )
-
-    training = Training(
-        model,
-        train_ds,
-        valid_ds,
-        train_config["batch_size"],
-        train_config["epoch"],
-        train_config["learning_rate"],
-        train_config["valid_span"],
-    )
-
-    training.train()
 
 
 def extract_feature_main(args):

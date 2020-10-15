@@ -1,9 +1,15 @@
-train:
-  batch_size: 64
-  epoch: 400
+model:
   att_embed_dim: 49
   lstm_hidden_dim: 128
   lstm_num_layers: 1
-  target_size: 29
+  target_size: 29  
+train:
+  batch_size: 64
+  epoch: 1000
   learning_rate: 0.00001
-  valid_span: 2
+  valid_span: 20
+  save_span: 50
+  save_dir: ./ckpt
+test:
+  batch_size: 1
+  
