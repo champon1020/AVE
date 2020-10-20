@@ -62,8 +62,7 @@ class Training:
         self.save_dir = save_dir
 
         self.optimizer = Adam(model.parameters(), lr=learning_rate)
-        self.loss_func = nn.CrossEntropyLoss()
-        self.scheduler = StepLR(self.optimizer, step_size=25000, gamma=0.1)
+        self.loss_func = nn.MultiLabelSoftMarginLoss()
 
     def train(self):
         """Training function"""
@@ -102,14 +101,18 @@ class Training:
 
                 # Convert output
                 # from [batch, frame_num, target_size] to [batch, target_size, frame_num]
-                # and calculate training loss.
-                loss = self.loss_func(pred.permute(0, 2, 1), label)
+                pred = pred.permute(0, 2, 1)
+
+                # Padding label.
+                label = self.pad_label(label, pred.shape)
+
+                # Calculate training loss.
+                loss = self.loss_func(pred, label)
                 loss.backward()
                 batch_loss += loss
 
                 # Optimize.
                 self.optimizer.step()
-                self.scheduler.step()
 
             # Calculate average loss and accuracy over batch iteration
             # and append them to each lists.
@@ -173,8 +176,12 @@ class Training:
 
             # Convert output
             # from [batch, frame_num, target_size] to [batch, target_size, frame_num]
-            # and calculate validation loss.
-            loss = self.loss_func(pred.permute(0, 2, 1), label)
+            pred = pred.permute(0, 2, 1)
+
+            label = self.pad_label(label, pred.shape)
+
+            # Calculate validation loss.
+            loss = self.loss_func(pred, label)
             batch_loss += loss
 
         # Calculate average loss and accuracy over batch iteration
@@ -186,6 +193,14 @@ class Training:
 
         # Output the result of validation.
         self._printres("VALID", loss, acc)
+
+    @staticmethod
+    def pad_label(label, size):
+        new_label = torch.zeros(size).cuda()
+        for i in range(label.shape[0]):
+            new_label[i, label[i]] = 1
+
+        return new_label
 
     @staticmethod
     def _printres(prefix, loss, acc):
