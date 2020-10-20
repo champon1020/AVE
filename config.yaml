@@ -1,15 +1,29 @@
-model:
-  att_embed_dim: 49
-  lstm_hidden_dim: 128
-  lstm_num_layers: 1
-  target_size: 29  
-train:
-  batch_size: 64
-  epoch: 500
-  learning_rate: 0.00001
-  valid_span: 20
-  save_span: 50
-  save_dir: ./ckpt
-test:
-  batch_size: 1
-  
+avel:
+  model:
+    att_embed_dim: 49
+    lstm_hidden_dim: 128
+    lstm_num_layers: 1
+    target_size: 29  
+  train:
+    batch_size: 64
+    epoch: 500
+    learning_rate: 0.00001
+    valid_span: 20
+    save_span: 50
+    save_dir: ./avel_ckpt
+  test:
+    batch_size: 1
+scmm:
+  model:
+    fc_hidden_size: 128
+    fc_output_size: 64
+    target_size: 29
+  train:
+    batch_size: 64
+    epoch: 500
+    learning_rate: 0.00001
+    valid_span: 20
+    save_span: 50
+    save_dir: ./scmm_ckpt
+  test:
+    batch_size: 1

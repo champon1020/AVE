@@ -1,4 +1,4 @@
-"""Train module
+"""Train module for audio visual event localization
 
 This module provides training or validation functions.
 

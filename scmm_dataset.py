@@ -38,24 +38,28 @@ class SCMMDataset(AVE, Dataset):
         self.ave_root = ave_root
         self.features_path = features_path
         self.batch_size = batch_size
-        self.frame_num = 10
 
     def __len__(self) -> int:
-        return len(self.annotations)
+        return len(self.annotations) * self.frame_num
 
     def __getitem__(self, idx: int) -> Dict[str, Tensor]:
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
+        video_idx = idx // self.frame_num
+        frame_idx = idx & self.frame_num
 
-        video_id = self.annotations[idx]["video_id"]
+        if torch.is_tensor(video_idx):
+            video_idx = video_idx.tolist()
+
+        if torch.is_tensor(frame_idx):
+            frame_idx = frame_idx.tolist()
+
+        video_id = self.annotations[video_idx]["video_id"]
         embed_name = "{0}.pt".format(video_id)
         feature_a = torch.load(os.path.join(self.features_path, "audio", embed_name))
         feature_v = torch.load(os.path.join(self.features_path, "frame", embed_name))
 
-        # TODO: fix for distance learning
         sample = {
-            "audio": feature_a,
-            "video": feature_v,
+            "audio": feature_a[frame_idx, :],
+            "video": feature_v[frame_idx, :, :, :],
             "label": self.annotations[idx],
         }
 

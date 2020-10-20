@@ -16,7 +16,7 @@ from util import parse_yaml
 def main():
     """Main process"""
     args = parse_args()
-    config = parse_yaml(args.yaml_path)
+    config = parse_yaml(args.config_path)["avel"]
     test_config = config["test"]
     model_config = config["model"]
 
@@ -76,7 +76,7 @@ def parse_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Audio Visual Event")
 
     parser.add_argument(
-        "--yaml-path", help="configuration file path of yaml", type=str, required=True
+        "--config-path", help="configuration file path", type=str, required=True
     )
     parser.add_argument(
         "--ave-root", help="AVE dataset root path", type=str, required=True
@@ -92,13 +92,13 @@ def parse_args() -> argparse.ArgumentParser:
         default="./features",
         help="features directory path",
         type=str,
-        required=False,
+        required=True,
     )
     parser.add_argument(
         "--ckpt-path",
         help="checkpoint file path",
         type=str,
-        required=False,
+        required=True,
     )
 
     args = parser.parse_args()
