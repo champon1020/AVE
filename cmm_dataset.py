@@ -1,6 +1,6 @@
-"""Audio visual distance learning dataset
+"""Audio visual distance learning dataset class
 
-This module provides dataset for audio visual distance learning.
+This module provides dataset class for audio visual distance learning.
 
 """
 import os
@@ -77,8 +77,8 @@ class CMMDataset(AVE, Dataset):
         )
 
         sample = {
-            "audio": feature_a[frame_idx, :],
-            "video": feature_v[frame_idx, :, :, :],
+            "audio": feature_a[frame_idx],
+            "video": feature_v[frame_idx],
             "label": 1
             if video_idx == rand_video_idx and frame_idx == rand_frame_idx
             else 0,
@@ -106,3 +106,101 @@ class CMMDataset(AVE, Dataset):
             return (idx + rand) % self.__len__()
 
         return idx
+
+    def get_video_segment(self, start_idx: int, length: int) -> Tensor:
+        """Get viedeo segment
+
+        Args:
+            start_idx (int): start index number.
+            length (int): segment length.
+
+        Returns:
+            torch.Tensor: video segment feature, [length, video_dim, video_height, video_width].
+
+        """
+        video_segment = None
+
+        for i in range(length):
+            # [video_dim, video_height, video_width].
+            feature_v = self.get_video_frame(start_idx + i)
+
+            # [1, video_dim, video_height, video_width].
+            feature_v = feature_v.unsqueeze(0)
+
+            if video_segment is None:
+                video_segment = feature_v
+            else:
+                video_segment = torch.cat((video_segment, feature_v), dim=0)
+
+        return video_segment
+
+    def get_audio_segment(self, start_idx: int, length: int) -> Tensor:
+        """Get viedeo segment
+
+        Args:
+            start_idx (int): start index number.
+            length (int): segment length.
+
+        Returns:
+            torch.Tensor: audio segment feature, [length, audio_dim].
+
+        """
+        audio_segment = None
+
+        for i in range(length):
+            # [audio_dim].
+            feature_a = self.get_audio_frame(start_idx + i)
+
+            # [1, audio_dim].
+            feature_a = feature_a.unsqueeze(0)
+
+            if audio_segment is None:
+                audio_segment = feature_a
+            else:
+                audio_segment = torch.cat((audio_segment, feature_a), dim=0)
+
+        return audio_segment
+
+    def get_video_frame(self, idx: int) -> Tensor:
+        """Get video frame
+
+        Args:
+            idx (int): index number.
+
+        Returns:
+            torch.Tensor: frame feature, [video_dim, video_height, video_width].
+
+        """
+        video_idx = idx // self.frame_num
+        frame_idx = idx % self.frame_num
+
+        video_id = self.annotations[video_idx]["video_id"]
+        frame_feature_name = "{0}.pt".format(video_id)
+
+        feature_v = torch.load(
+            os.path.join(self.features_path, "frame", frame_feature_name)
+        )
+
+        return feature_v[frame_idx]
+
+    def get_audio_frame(self, idx: int) -> Tensor:
+        """Get audio frame
+
+        Args:
+            idx (int): index number.
+
+        Returns:
+            torch.Tensor: frame feature, [audio_dim].
+
+        """
+        audio_idx = idx // self.frame_num
+        frame_idx = idx % self.frame_num
+
+        video_id = self.annotations[audio_idx]["video_id"]
+        audio_feature_name = "{0}.pt".format(video_id)
+
+        feature_a = torch.load(
+            os.path.join(self.features_path, "audio", audio_feature_name)
+        )
+
+        return feature_a[frame_idx]

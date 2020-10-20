@@ -54,6 +54,7 @@ def main():
         train_config["epoch"],
         train_config["learning_rate"],
         train_config["loss_margin"],
+        train_config["valid_num"],
         train_config["valid_span"],
         train_config["save_span"],
         train_config["save_dir"],

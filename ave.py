@@ -56,12 +56,20 @@ class AVE(metaclass=ABCMeta):
                     self.category_dict[annots[0]] = category_num
                     category_num += 1
 
-                label = self._generate_segment_label(
-                    annots[0], int(annots[3]), int(annots[4].split("\n")[0])
-                )
+                category = annots[0]
+                start_time = int(annots[3])
+                end_time = int(annots[4].split("\n")[0])
+
+                label = self._generate_segment_label(category, start_time, end_time)
 
                 self.annotations.append(
-                    {"category": annots[0], "video_id": annots[1], "label": label}
+                    {
+                        "category": category,
+                        "video_id": annots[1],
+                        "label": label,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                    }
                 )
 
     def _generate_segment_label(

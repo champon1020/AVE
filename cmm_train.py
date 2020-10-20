@@ -4,7 +4,6 @@ This module provides training or validation functions.
 
 """
 import os
-from typing import List
 
 import torch
 from torch import Tensor
@@ -14,6 +13,7 @@ from torch.utils.data import DataLoader
 
 from cmm_dataset import CMMDataset
 from cmm_model import AVDLN
+from retrieval import a2v, euclidean_distance, v2a
 
 
 class Training:
@@ -27,6 +27,7 @@ class Training:
         epoch (int): epoch size.
         learning_rate (float): learning rate.
         loss_margin (float): contrastive loss margin.
+        valid_num (int): the number of validations loop.
         valid_span (int): validation span.
         save_span (int): saving model span.
         save_dir (str): directory path to save model.
@@ -44,6 +45,7 @@ class Training:
         epoch: int,
         learning_rate: float,
         loss_margin: float,
+        valid_num: int,
         valid_span: int,
         save_span: int,
         save_dir: str,
@@ -54,6 +56,7 @@ class Training:
         self.batch_size = batch_size
         self.epoch = epoch
         self.loss_margin = loss_margin
+        self.valid_num = valid_num
         self.valid_span = valid_span
         self.save_span = save_span
         self.save_dir = save_dir
@@ -61,50 +64,39 @@ class Training:
         self.optimizer = Adam(model.parameters(), lr=learning_rate)
         self.scheduler = StepLR(self.optimizer, step_size=25000, gamma=0.1)
 
-    @staticmethod
-    def _euclidean_distance(vec1: Tensor, vec2: Tensor) -> Tensor:
-        """Calculate euclidean distance between two vectors.
-
-        Args:
-            vec1 (torch.Tensor): tensor.
-            vec2 (torch.Tensor): tensor.
-
-        Returns:
-            torch.Tensor: euclidean distance with tensor.
-
-        """
-        return torch.cdist(vec1, vec2)
-
     def _contrastive_loss(self, audio: Tensor, video: Tensor, y: Tensor) -> Tensor:
         """Contrastive loss
 
         Args:
-            audio (torch.Tensor): audio embedding tensor.
-            video (torch.Tensor): video embedding tensor.
+            audio (torch.Tensor): audio embedding tensor, [batch, dim].
+            video (torch.Tensor): video embedding tensor, [batch, dim].
             y (torch.Tensor<int>): wheather audio and video is corresponding or not.
 
         Returns:
-            torch.Tensor<float>: loss.
+            torch.Tensor<float>: loss, [batch].
 
         """
-        dist = self._euclidean_distance(audio, video)
+        dist = euclidean_distance(audio, video)
 
-        loss_pos = y * (dist ** 2)
+        loss_pos = y * torch.pow(dist, 2)
         loss_neg = (1 - y) * (
-            torch.max(torch.zeros_like(dist), self.loss_margin - dist) ** 2
+            torch.pow(torch.max(torch.zeros_like(dist), self.loss_margin - dist), 2)
         )
 
-        return loss_pos + loss_neg
+        return torch.mean(loss_pos + loss_neg)
 
     def train(self):
         """Traiinig function"""
         train_loader = DataLoader(self.train_ds, self.batch_size, shuffle=True)
-        valid_loader = DataLoader(self.valid_ds, self.batch_size, shuffle=True)
-
         iterbatch_num = (len(self.train_ds) + 1) // self.batch_size
 
         train_loss = []
-        valid_acc = []
+        valid_a2v_acc = []
+        valid_v2a_acc = []
+
+        acc = self._validation_a2v()
+        print(acc)
+        exit(1)
 
         for ep in range(self.epoch):
             print("Epoch {0} / {1}".format(ep + 1, self.epoch))
@@ -135,8 +127,10 @@ class Training:
 
             # Validation.
             if (ep + 1) % self.valid_span == 0:
-                self.model.eval()
-                self._validation(valid_loader, valid_acc)
+                a2v_acc = self._validation_a2v()
+                v2a_acc = self._validation_v2a()
+                valid_a2v_acc.append(a2v_acc)
+                valid_v2a_acc.append(v2a_acc)
 
             # Save model.
             if (ep + 1) % self.save_span == 0:
@@ -146,13 +140,14 @@ class Training:
                 torch.save(self.model, save_path)
                 print("Save model as {0}".format(save_path))
 
-    def _validation(self, valid_loader: DataLoader, valid_acc: List[float]):
-        """Validation function
+    def _validation_a2v(self) -> float:
+        self.model.eval()
+        acc = a2v(self.model, self.valid_ds, self.valid_num)
+        print("[VALID] A2V Accuracy: {0:.7}".format(acc))
+        return acc
 
-        Args:
-            valid_loader (torhc.DataLoader): validation dataset loader.
-            valid_acc (List[float]): validation accuracy list.
-
-        """
-        iterbatch_num = (len(self.valid_ds) + 1) // self.batch_size
-        return
+    def _validation_v2a(self) -> float:
+        self.model.eval()
+        acc = v2a(self.model, self.valid_ds, self.valid_num)
+        print("[VALID] V2A Accuracy: {0:.7}".format(acc))
+        return acc
