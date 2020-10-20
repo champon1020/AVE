@@ -127,6 +127,7 @@ class Training:
 
             # Validation.
             if (ep + 1) % self.valid_span == 0:
+                print("Validation phase...")
                 a2v_acc = self._validation_a2v()
                 v2a_acc = self._validation_v2a()
                 valid_a2v_acc.append(a2v_acc)

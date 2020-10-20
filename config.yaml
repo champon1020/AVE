@@ -24,7 +24,8 @@ cmm:
     epoch: 500
     loss_margin: 0.1
     learning_rate: 0.00001
-    valid_span: 20
+    valid_num: 10
+    valid_span: 50
     save_span: 50
     save_dir: ./scmm_ckpt
   test:
