@@ -45,9 +45,9 @@ class AVELDataset(AVE, Dataset):
             idx = idx.tolist()
 
         video_id = self.annotations[idx]["video_id"]
-        embed_name = "{0}.pt".format(video_id)
-        feature_a = torch.load(os.path.join(self.features_path, "audio", embed_name))
-        feature_v = torch.load(os.path.join(self.features_path, "frame", embed_name))
+        feature_name = "{0}.pt".format(video_id)
+        feature_a = torch.load(os.path.join(self.features_path, "audio", feature_name))
+        feature_v = torch.load(os.path.join(self.features_path, "frame", feature_name))
 
         sample = {
             "audio": feature_a,

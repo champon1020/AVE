@@ -68,8 +68,9 @@ class Training:
     def train(self):
         """Training function"""
         train_loader = DataLoader(self.train_ds, self.batch_size, shuffle=True)
-        iterbatch_num = (len(self.train_ds) + 1) // self.batch_size
         valid_loader = DataLoader(self.valid_ds, self.batch_size, shuffle=True)
+
+        iterbatch_num = (len(self.train_ds) + 1) // self.batch_size
 
         train_loss = []
         train_acc = []
@@ -133,6 +134,7 @@ class Training:
                 torch.save(self.model, save_path)
                 print("Save model as {0}".format(save_path))
 
+        # Plot results.
         self._plot_data(loss_ax, train_loss, self.epoch)
         self._plot_data(loss_ax, valid_loss, self.epoch)
         self._plot_data(acc_ax, train_acc, self.epoch)

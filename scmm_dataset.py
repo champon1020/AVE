@@ -6,6 +6,7 @@ This module provides dataset for audio visual distance learning.
 import os
 from typing import Dict
 
+import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
@@ -44,7 +45,11 @@ class SCMMDataset(AVE, Dataset):
 
     def __getitem__(self, idx: int) -> Dict[str, Tensor]:
         video_idx = idx // self.frame_num
-        frame_idx = idx & self.frame_num
+        frame_idx = idx % self.frame_num
+
+        rand_idx = self._get_random_idx(idx)
+        rand_video_idx = rand_idx // self.frame_num
+        rand_frame_idx = rand_idx % self.frame_num
 
         if torch.is_tensor(video_idx):
             video_idx = video_idx.tolist()
@@ -52,15 +57,52 @@ class SCMMDataset(AVE, Dataset):
         if torch.is_tensor(frame_idx):
             frame_idx = frame_idx.tolist()
 
-        video_id = self.annotations[video_idx]["video_id"]
-        embed_name = "{0}.pt".format(video_id)
-        feature_a = torch.load(os.path.join(self.features_path, "audio", embed_name))
-        feature_v = torch.load(os.path.join(self.features_path, "frame", embed_name))
+        if torch.is_tensor(rand_video_idx):
+            rand_video_idx = rand_video_idx.tolist()
+
+        if torch.is_tensor(rand_frame_idx):
+            rand_frame_idx = rand_frame_idx.tolist()
+
+        audio_video_id = self.annotations[video_idx]["video_id"]
+        frame_video_id = self.annotations[rand_video_idx]["video_id"]
+
+        audio_feature_name = "{0}.pt".format(audio_video_id)
+        frame_feature_name = "{0}.pt".format(frame_video_id)
+
+        feature_a = torch.load(
+            os.path.join(self.features_path, "audio", audio_feature_name)
+        )
+        feature_v = torch.load(
+            os.path.join(self.features_path, "frame", frame_feature_name)
+        )
 
         sample = {
             "audio": feature_a[frame_idx, :],
             "video": feature_v[frame_idx, :, :, :],
-            "label": self.annotations[idx],
+            "label": 1
+            if video_idx == rand_video_idx and frame_idx == rand_frame_idx
+            else 0,
         }
 
         return sample
+
+    def _get_random_idx(self, idx: int) -> int:
+        """Get random index.
+
+        This methods returns index number.
+        If the rand is greater than 0.5, this returns the same number to argument.
+        If the rand is less than 0.5, this returns the random number the range
+        between 0 to total length.
+
+        Args:
+            idx (int): index nubmer.
+
+        Returns:
+            int: random index number.
+
+        """
+        if np.random.rand() < 0.5:
+            rand = np.random.randint(0, self.__len__())
+            return (idx + rand) % self.__len__()
+
+        return idx

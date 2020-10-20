@@ -25,6 +25,12 @@ class DMRFE(nn.Module):
         target_size (int):
             the number of targets size. In localization task, this is the number of categories.
 
+        lstm_audio: lstm network for audio feature.
+        lstm_video: lstm network for video feature.
+        attention_net: audio-guided visual attention network.
+        fusion_net: fusion network to joint audio and video features.
+        fc: full connected network for event classification.
+
     """
 
     def __init__(
@@ -108,6 +114,11 @@ class AttentionNet(nn.Module):
     This class provides attention network.
 
     Attributes:
+        audio_dim (int): audio feature dimension.
+        video_dim (int): video feature dimension.
+        video_size (int): video_height * video_width.
+        embed_dim (int): embedding dimension.
+
         affine_audio (int): Dense layer that projects audio feature to embedding space.
         affine_video (int): Dense layer that projects video feature to embedding space.
         affine_a (int): Weight parameter.
@@ -133,7 +144,7 @@ class AttentionNet(nn.Module):
                 video feature, [batch, frame_num, video_dim, video_height, video_width].
 
         Returns:
-            torch.Tensor: video feature attended audio, [batch, video_dim]
+            torch.Tensor: video feature attended audio, [batch, frame_num, video_dim]
 
         """
         # Reshape video feature:
@@ -183,6 +194,9 @@ class FusionNet(nn.Module):
         input_size (int): Dense layer input size.
         hidden_size (int): Dense layer hidden size.
         output_size (int): Dense layer output size.
+
+        dense_audio: embedding network for audio.
+        dense_video: embedding network for video.
 
     """
 

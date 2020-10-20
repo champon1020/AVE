@@ -23,7 +23,11 @@ def main():
         extract_feature(args.ave_root)
 
     model = AVDLN(
-        128, 512, model_config["fc_hidden_size"], model_config["fc_output_size"]
+        128,
+        512,
+        model_config["att_embed_dim"],
+        model_config["fc_hidden_size"],
+        model_config["fc_output_size"],
     )
 
     train_ds = SCMMDataset(
@@ -48,6 +52,11 @@ def main():
         valid_ds,
         train_config["batch_size"],
         train_config["epoch"],
+        train_config["learning_rate"],
+        train_config["loss_margin"],
+        train_config["valid_span"],
+        train_config["save_span"],
+        train_config["save_dir"],
     )
 
     training.train()
@@ -93,3 +102,7 @@ def parse_args() -> argparse.ArgumentParser:
 
     args = parser.parse_args()
     return args
+
+
+if __name__ == "__main__":
+    main()

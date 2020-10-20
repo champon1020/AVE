@@ -15,12 +15,14 @@ avel:
     batch_size: 1
 scmm:
   model:
+    att_embed_dim: 49
     fc_hidden_size: 128
     fc_output_size: 64
     target_size: 29
   train:
     batch_size: 64
     epoch: 500
+    loss_margin: 0.1
     learning_rate: 0.00001
     valid_span: 20
     save_span: 50
