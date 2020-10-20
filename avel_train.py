@@ -1,4 +1,4 @@
-"""Train module
+"""Train module for audio visual event localization
 
 This module provides training or validation functions.
 
@@ -14,8 +14,8 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 
-from dataset import AVEDataset
-from model import DMRFE
+from avel_dataset import AVELDataset
+from avel_model import DMRFE
 
 
 class Training:
@@ -41,8 +41,8 @@ class Training:
     def __init__(
         self,
         model: DMRFE,
-        train_ds: AVEDataset,
-        valid_ds: AVEDataset,
+        train_ds: AVELDataset,
+        valid_ds: AVELDataset,
         batch_size: int,
         epoch: int,
         learning_rate: int,
@@ -68,8 +68,9 @@ class Training:
     def train(self):
         """Training function"""
         train_loader = DataLoader(self.train_ds, self.batch_size, shuffle=True)
-        iterbatch_num = (len(self.train_ds) + 1) // self.batch_size
         valid_loader = DataLoader(self.valid_ds, self.batch_size, shuffle=True)
+
+        iterbatch_num = (len(self.train_ds) + 1) // self.batch_size
 
         train_loss = []
         train_acc = []
@@ -104,11 +105,11 @@ class Training:
                 # and calculate training loss.
                 loss = self.loss_func(pred.permute(0, 2, 1), label)
                 loss.backward()
+                batch_loss += loss
 
                 # Optimize.
                 self.optimizer.step()
                 self.scheduler.step()
-                batch_loss += loss
 
             # Calculate average loss and accuracy over batch iteration
             # and append them to each lists.
@@ -133,6 +134,7 @@ class Training:
                 torch.save(self.model, save_path)
                 print("Save model as {0}".format(save_path))
 
+        # Plot results.
         self._plot_data(loss_ax, train_loss, self.epoch)
         self._plot_data(loss_ax, valid_loss, self.epoch)
         self._plot_data(acc_ax, train_acc, self.epoch)

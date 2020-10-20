@@ -8,15 +8,15 @@ import argparse
 import torch
 from torch.utils.data import DataLoader
 
-from dataset import AVEDataset
-from model import DMRFE
+from avel_dataset import AVELDataset
+from avel_model import DMRFE
 from util import parse_yaml
 
 
 def main():
     """Main process"""
     args = parse_args()
-    config = parse_yaml(args.yaml_path)
+    config = parse_yaml(args.config_path)["avel"]
     test_config = config["test"]
     model_config = config["model"]
 
@@ -24,7 +24,7 @@ def main():
     model = torch.load(args.ckpt_path)
 
     # If test mode, execute test and finish the main process.
-    test_ds = AVEDataset(
+    test_ds = AVELDataset(
         args.ave_root,
         args.test_annot,
         args.features_path,
@@ -35,12 +35,12 @@ def main():
     test(model, test_ds)
 
 
-def test(model: DMRFE, test_ds: AVEDataset):
+def test(model: DMRFE, test_ds: AVELDataset):
     """Test function
 
     Args:
         model (DMRFE): model class.
-        test_ds (AVEDataset): AVE dataset for testing.
+        test_ds (AVELDataset): AVE dataset for testing.
 
     """
     batch_size = 1
@@ -76,7 +76,7 @@ def parse_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Audio Visual Event")
 
     parser.add_argument(
-        "--yaml-path", help="configuration file path of yaml", type=str, required=True
+        "--config-path", help="configuration file path", type=str, required=True
     )
     parser.add_argument(
         "--ave-root", help="AVE dataset root path", type=str, required=True
@@ -92,13 +92,13 @@ def parse_args() -> argparse.ArgumentParser:
         default="./features",
         help="features directory path",
         type=str,
-        required=False,
+        required=True,
     )
     parser.add_argument(
         "--ckpt-path",
         help="checkpoint file path",
         type=str,
-        required=False,
+        required=True,
     )
 
     args = parser.parse_args()
