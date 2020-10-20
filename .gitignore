@@ -1,5 +1,7 @@
 __pycache__/**
+ckpt/**
 features/**
 tmp/**
 playground.py
+log
 run.sh
