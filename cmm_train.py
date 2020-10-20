@@ -94,10 +94,6 @@ class Training:
         valid_a2v_acc = []
         valid_v2a_acc = []
 
-        acc = self._validation_a2v()
-        print(acc)
-        exit(1)
-
         for ep in range(self.epoch):
             print("Epoch {0} / {1}".format(ep + 1, self.epoch))
 
