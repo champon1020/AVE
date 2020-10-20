@@ -21,7 +21,7 @@ Re-Implementation of Audio-Visual Event Localization (ECCV 2018)
 
 You run the following command to start training.
 ```
-python main.py \
+python avel_main.py \
     --ave-root <dataset root directory path> \
     --train-annot <training annotaion file path> \
     --valid-annot <validation annotation file path> \
@@ -31,7 +31,7 @@ python main.py \
 
 If you want to extract audio and visual features before training, you can use ```--extract-feature``` flag with above command.
 ```
-python main.py \
+python avel_main.py \
     --ave-root <dataset root directory path> \
     --train-annot <training annotaion file path> \
     --valid-annot <validation annotation file path> \
@@ -45,7 +45,7 @@ Also the checkpoint of training model is saved under the ckpt directory.
 
 If you want to run test, you run the following command.
 ```
-python test.py \
+python avel_test.py \
     --ave-root <dataset root directory path> \
     --test-annot <testing annotation file path> \
     --feature-path <pre-trained audio and visual features directory path> \

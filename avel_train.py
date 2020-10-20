@@ -14,8 +14,8 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 
-from dataset import AVEDataset
-from model import DMRFE
+from avel_dataset import AVELDataset
+from avel_model import DMRFE
 
 
 class Training:
@@ -41,8 +41,8 @@ class Training:
     def __init__(
         self,
         model: DMRFE,
-        train_ds: AVEDataset,
-        valid_ds: AVEDataset,
+        train_ds: AVELDataset,
+        valid_ds: AVELDataset,
         batch_size: int,
         epoch: int,
         learning_rate: int,

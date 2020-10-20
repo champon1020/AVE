@@ -1,67 +1,39 @@
-"""Dataloader module
+"""AVE dataset abstract class
 
-This module provides AVE dataset loader class.
+This module provides abstract class for AVE dataset.
 
 """
-import os
-from typing import Dict, List
+
+from abc import ABCMeta
+from typing import List
 
 import numpy as np
 import torch
-import torch.utils.data as data
-from torch import Tensor
 
 
-class AVEDataset(data.Dataset):
+class AVE(metaclass=ABCMeta):
     """AVE dataset loader class
 
     Attributes:
-        ave_root (str): ave dataset root directory path.
         annot_path (str): annotation file path.
-        batch_size (int): dataset batch size.
-        annotations (Dict[]): all annotations list.
         frame_num (int): the number of frames.
         target_size (int): the number of categories included in AVE dataset.
+        annotations (Dict[]): all annotations list.
 
     """
 
     def __init__(
         self,
-        ave_root: str,
         annot_path: str,
-        features_path: str,
-        batch_size: int,
         target_size: int,
     ):
-        self.ave_root = ave_root
-        self.annot_path = annot_path
-        self.features_path = features_path
-        self.batch_size = batch_size
         self.frame_num = 10
+        self.annot_path = annot_path
         self.target_size = target_size
 
         self.annotations = []
-        self.category_dict = {"None": target_size - 1}
+        self.category_dict = {"None": self.target_size - 1}
         self._load_annot()
-
-    def __len__(self) -> int:
-        return len(self.annotations)
-
-    def __getitem__(self, idx: int) -> Dict[str, Tensor]:
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        video_id = self.annotations[idx]["video_id"]
-        embed_name = "{0}.pt".format(video_id)
-        feature_a = torch.load(os.path.join(self.features_path, "audio", embed_name))
-        feature_v = torch.load(os.path.join(self.features_path, "frame", embed_name))
-
-        sample = {
-            "audio": feature_a,
-            "video": feature_v,
-            "label": self.annotations[idx],
-        }
-        return sample
 
     def _load_annot(self):
         """

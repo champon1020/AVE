@@ -40,7 +40,7 @@ class DMRFE(nn.Module):
         super().__init__()
         self.lstm_num_layers = lstm_num_layers
         self.lstm_hidden_dim = lstm_hidden_dim
-    
+
         self.attention_net = AttentionNet(
             audio_dim, video_dim, video_size, att_embed_dim
         )
@@ -123,7 +123,6 @@ class AttentionNet(nn.Module):
         self.affine_a = nn.Linear(embed_dim, video_size, bias=False)
         self.affine_v = nn.Linear(embed_dim, video_size, bias=False)
         self.affine_f = nn.Linear(embed_dim, 1, bias=False)
-
 
     def forward(self, audio: Tensor, video: Tensor) -> Tensor:
         """Forward process

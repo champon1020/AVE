@@ -8,8 +8,8 @@ import argparse
 import torch
 from torch.utils.data import DataLoader
 
-from dataset import AVEDataset
-from model import DMRFE
+from avel_dataset import AVELDataset
+from avel_model import DMRFE
 from util import parse_yaml
 
 
@@ -24,7 +24,7 @@ def main():
     model = torch.load(args.ckpt_path)
 
     # If test mode, execute test and finish the main process.
-    test_ds = AVEDataset(
+    test_ds = AVELDataset(
         args.ave_root,
         args.test_annot,
         args.features_path,
@@ -35,12 +35,12 @@ def main():
     test(model, test_ds)
 
 
-def test(model: DMRFE, test_ds: AVEDataset):
+def test(model: DMRFE, test_ds: AVELDataset):
     """Test function
 
     Args:
         model (DMRFE): model class.
-        test_ds (AVEDataset): AVE dataset for testing.
+        test_ds (AVELDataset): AVE dataset for testing.
 
     """
     batch_size = 1

@@ -1,4 +1,4 @@
-"""Main routine
+"""Main routine for audio visual event localization
 
 This module provides main process functions.
 
@@ -9,10 +9,10 @@ import os
 
 import torch
 
-from dataset import AVEDataset
+from avel_dataset import AVELDataset
+from avel_model import DMRFE
+from avel_train import Training
 from feature_extractor import FeatureExtractor
-from model import DMRFE
-from train import Training
 from util import parse_yaml
 
 logging.basicConfig(format="[AVE '%(levelname)s] %(message)s : %(asctime)s")
@@ -43,7 +43,7 @@ def main():
     )
 
     # AVE training dataset.
-    train_ds = AVEDataset(
+    train_ds = AVELDataset(
         args.ave_root,
         args.train_annot,
         args.features_path,
@@ -52,7 +52,7 @@ def main():
     )
 
     # AVE validation dataset.
-    valid_ds = AVEDataset(
+    valid_ds = AVELDataset(
         args.ave_root,
         args.valid_annot,
         args.features_path,
