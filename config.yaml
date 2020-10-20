@@ -13,7 +13,7 @@ avel:
     save_dir: ./avel_ckpt
   test:
     batch_size: 1
-scmm:
+cmm:
   model:
     att_embed_dim: 49
     fc_hidden_size: 128

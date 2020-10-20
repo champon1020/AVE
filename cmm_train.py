@@ -12,8 +12,8 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 
-from scmm_dataset import SCMMDataset
-from scmm_model import AVDLN
+from cmm_dataset import CMMDataset
+from cmm_model import AVDLN
 
 
 class Training:
@@ -21,8 +21,8 @@ class Training:
 
     Attributes:
         model (AVDLN): audio visual distance learning model.
-        train_ds (SCMMDataset): training dataset.
-        valid_ds (SCMMDataset): validation dataset.
+        train_ds (CMMDataset): training dataset.
+        valid_ds (CMMDataset): validation dataset.
         batch_size (int): batch size.
         epoch (int): epoch size.
         learning_rate (float): learning rate.
@@ -38,8 +38,8 @@ class Training:
     def __init__(
         self,
         model: AVDLN,
-        train_ds: SCMMDataset,
-        valid_ds: SCMMDataset,
+        train_ds: CMMDataset,
+        valid_ds: CMMDataset,
         batch_size: int,
         epoch: int,
         learning_rate: float,
@@ -116,24 +116,29 @@ class Training:
                 video = batch["video"].cuda()
                 label = batch["label"].cuda()
 
+                # Audio and video embedding.
                 embed_audio, embed_video = self.model(audio, video)
+
+                # Calculate loss.
                 loss = self._contrastive_loss(embed_audio, embed_video, label)
                 loss.backward()
+                batch_loss += loss
 
-                # Optimizer.
+                # Optimize.
                 self.optimizer.step()
                 self.scheduler.step()
-                batch_loss += loss
 
             loss = batch_loss.cpu().detach().numpy() / float(iterbatch_num)
             train_loss.append(loss)
 
             print("[TRAIN] Loss: {0:.7}".format(loss))
 
+            # Validation.
             if (ep + 1) % self.valid_span == 0:
                 self.model.eval()
                 self._validation(valid_loader, valid_acc)
 
+            # Save model.
             if (ep + 1) % self.save_span == 0:
                 if os.path.exists(self.save_dir) is False:
                     os.mkdir(self.save_dir)

@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 from ave import AVE
 
 
-class SCMMDataset(AVE, Dataset):
+class CMMDataset(AVE, Dataset):
     """AVE dataset class for distance learning
 
     Attributes:

@@ -4,16 +4,16 @@
 
 import argparse
 
-from scmm_dataset import SCMMDataset
-from scmm_model import AVDLN
-from scmm_train import Training
+from cmm_dataset import CMMDataset
+from cmm_model import AVDLN
+from cmm_train import Training
 from util import extract_feature, parse_yaml
 
 
 def main():
     """Main process"""
     args = parse_args()
-    config = parse_yaml(args.config_path)["scmm"]
+    config = parse_yaml(args.config_path)["cmm"]
     train_config = config["train"]
     model_config = config["model"]
 
@@ -30,7 +30,7 @@ def main():
         model_config["fc_output_size"],
     )
 
-    train_ds = SCMMDataset(
+    train_ds = CMMDataset(
         args.ave_root,
         args.train_annot,
         args.features_path,
@@ -38,7 +38,7 @@ def main():
         model_config["target_size"],
     )
 
-    valid_ds = SCMMDataset(
+    valid_ds = CMMDataset(
         args.ave_root,
         args.valid_annot,
         args.features_path,

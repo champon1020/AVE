@@ -105,11 +105,11 @@ class Training:
                 # and calculate training loss.
                 loss = self.loss_func(pred.permute(0, 2, 1), label)
                 loss.backward()
+                batch_loss += loss
 
                 # Optimize.
                 self.optimizer.step()
                 self.scheduler.step()
-                batch_loss += loss
 
             # Calculate average loss and accuracy over batch iteration
             # and append them to each lists.
