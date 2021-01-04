@@ -1,4 +1,4 @@
 __pycache__/**
-ckpt/**
+checkpoints/**
 features/**
 log
