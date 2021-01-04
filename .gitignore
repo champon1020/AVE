@@ -1,11 +1,4 @@
 __pycache__/**
 ckpt/**
 features/**
-tmp/**
-avel_ckpt/**
-scmm_ckpt/**
-playground.py
 log
-run.sh
-log
-result.png

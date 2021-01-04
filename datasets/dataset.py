@@ -11,31 +11,28 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from ave import AVE
+from .ave import AVE
 
 
 class AVELDataset(AVE, Dataset):
     """AVE dataset class for event localization
 
     Attributes:
-        ave_root (str): ave dataset root directory path.
-        batch_size (int): dataset batch size.
-        target_size (int): the number of categories included in AVE dataset.
+        annotation_path: (str): Annotation file path.
+        target_size (int): Number of categories included in AVE dataset.
+        features_path (str): Audio and visual features directory path.
 
     """
 
     def __init__(
         self,
-        ave_root: str,
-        annot_path: str,
-        features_path: str,
-        batch_size: int,
+        annotation_path: str,
         target_size: int,
+        features_path: str,
+        n_frames: int,
     ):
-        super().__init__(annot_path, target_size)
-        self.ave_root = ave_root
+        super().__init__(annotation_path, target_size, n_frames)
         self.features_path = features_path
-        self.batch_size = batch_size
 
     def __len__(self) -> int:
         return len(self.annotations)
@@ -47,11 +44,11 @@ class AVELDataset(AVE, Dataset):
         video_id = self.annotations[idx]["video_id"]
         feature_name = "{0}.pt".format(video_id)
         feature_a = torch.load(os.path.join(self.features_path, "audio", feature_name))
-        feature_v = torch.load(os.path.join(self.features_path, "frame", feature_name))
+        feature_v = torch.load(os.path.join(self.features_path, "visual", feature_name))
 
         sample = {
             "audio": feature_a,
-            "video": feature_v,
+            "visual": feature_v,
             "label": self.annotations[idx],
         }
 
