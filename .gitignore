@@ -1,4 +1,4 @@
-__pycache__/**
-checkpoints/**
-features/**
+**/__pycache__
+checkpoints
+features
 log
